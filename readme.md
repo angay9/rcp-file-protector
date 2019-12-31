@@ -11,7 +11,7 @@ I haven't tested it with previous versions, but I'm almost sure that it shoul wo
 ## How to use it
 
 #### Video
-Check out this video tutorial - https://www.youtube.com/watch?v=pFC9PP3481
+Check out this video tutorial - https://www.youtube.com/watch?v=pFC9PP34818
 
 ### Matching patterns that you can use:
 
