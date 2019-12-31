@@ -10,6 +10,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Settings 
 {
+    /**
+     * View
+     *
+     * @var RcpFileProtector\Core\View
+     */
     protected $view;
 
     public function __construct(View $view)
@@ -17,11 +22,21 @@ class Settings
         $this->view = $view;
     }
 
+    /**
+     * Initialize admin settings page
+     *
+     * @return void
+     */
     public function init()
     {
         add_action('admin_menu', [$this, 'addMenuPage']);
     }
 
+    /**
+     * Add menu page
+     *
+     * @return void
+     */
     public function addMenuPage()
     {
         $page = add_menu_page(
@@ -36,6 +51,11 @@ class Settings
         add_action('admin_print_scripts-' . $page, [$this, 'addAdminAssets']);
     }
 
+    /**
+     * Add admin assets
+     *
+     * @return void
+     */
     public function addAdminAssets()
     {
 
@@ -54,6 +74,11 @@ class Settings
         );
     }
 
+    /**
+     * Render options page
+     *
+     * @return void
+     */
     public function renderOptionsPage()
     {
         $errors = [];
@@ -77,24 +102,48 @@ class Settings
             ];
         }, rcp_get_subscription_levels());
 
+        $memberships = apply_filters('rcp-file-protector/admin/settings/memberships', $memberships);
+
+        $protectionLevels = stripslashes_deep(get_option('rcp_file_protector_protection_levels', []));
+
+        $protectionLevels = apply_filters('rcp-file-protector/admin/settings/protection_levels', $protectionLevels);
+
         $view = $this->view->render(
             'admin/index.php',
             [
                 'successMessage' => $successMessage,
                 'errors' => $errors,
                 'memberships' => $memberships,
-                'protectionLevels' => stripslashes_deep(get_option('rcp_file_protector_protection_levels', []))
+                'protectionLevels' => $protectionLevels
             ]
         );
 
         echo $view;
     }
 
-    protected function saveOptions(array $data) 
+    /**
+     * Save options
+     *
+     * @param array $data
+     * @return void
+     */
+    protected function saveOptions(array $data)
     {
-        update_option('rcp_file_protector_protection_levels', $data['levels'], true);
+        $levels = $data['levels'];
+
+        $levels = apply_filters('rcp_file_protector/admin/before_save_protection_levels', $levels);
+
+        update_option('rcp_file_protector_protection_levels', $levels, true);
+
+        do_action('rcp_file_protector/admin/after_save_protection_levels', $levels);
     }
 
+    /**
+     * Validate data
+     *
+     * @param array $data
+     * @return array
+     */
     protected function validate(array $data) 
     {
         $errors = [];
@@ -106,8 +155,8 @@ class Settings
         }
 
         // Validate required memberships field and url
-
         $levelErrors = [];
+        
         foreach ($data['levels'] as $index => $level) {
             $humanIndex = $index + 1;
 
@@ -127,6 +176,11 @@ class Settings
         return $errors;
     }
 
+    /**
+     * Get data from $_POST
+     *
+     * @return array
+     */
     protected function getPostData()
     {
         $levels = isset($_POST['levels']) ? $_POST['levels'] : [];
@@ -144,6 +198,8 @@ class Settings
             'nonce' => isset($_POST['rcp-file-protector_nonce']) ? $_POST['rcp-file-protector_nonce'] : null,
             'levels' => $levels
         ];
+
+        $data = apply_filters('rcp-file-protector/admin/settings/get_request_data', $data);
 
         return $data;
     }

@@ -51,8 +51,8 @@
                         
                         <div class="rcp-fp-form-row">
                             <label class="rcp-fp-protection-level__label">Allow Access To URL</label>
-                            <div class="rcp-fp-form-group">
-                                <span class="rcp-fp-protection-level__addon">/wp-content/uploads/</span>
+                            <div :class="{'rcp-fp-form-group': !level.isRegex}">
+                                <span v-show="!level.isRegex" class="rcp-fp-protection-level__addon">/wp-content/uploads/</span>
                                 <input :name="'levels[' + index + '][url]'" v-model="level.url" type="text" class="rcp-fp-protection-level__input">
                             </div>
                         </div>

@@ -2,6 +2,8 @@
 
 namespace RcpFileProtector\Core\Front;
 
+use RcpFileProtector\Core\Front\Exceptions\FileNotFoundException;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -10,9 +12,53 @@ if ( ! defined( 'ABSPATH' ) ) {
  * This class uses the solution inspired by this thread
  * https://gist.github.com/hakre/1552239
  */
-
 class Guard 
 {
+	/**
+	 * Boolean flag to check if Guard needs to be unguarded
+	 *
+	 * @var boolean
+	 */
+	protected $unguard = false;
+
+	/**
+	 * File reader
+	 *
+	 * @var RcpFileProtector\Core\Front\FileReader
+	 */
+	protected $fileReader;
+
+	public function __construct(FileReader $fileReader)
+	{
+		$this->fileReader = $fileReader;
+	}
+
+	/**
+	 * Get file reader
+	 *
+	 * @return RcpFileProtector\Core\Front\FileReader
+	 */
+	public function getFileReader()
+	{
+		return $this->fileReader;
+	}
+
+	/**
+	 * Set file reader
+	 *
+	 * @param FileReader $fileReader
+	 * @return void
+	 */
+	public function setFileReader(FileReader $fileReader)
+	{
+		$this->fileReader = $fileReader;
+	}
+
+	/**
+	 * Protect requests
+	 *
+	 * @return void
+	 */
 	public function protect() 
 	{
 		// Get file from request
@@ -21,23 +67,44 @@ class Guard
 		// Check if file arg exists
 		$this->verifyRequest($file);
 
+		if ($this->unguard === true) {
+			
+			$this->processRequest($file);
+			
+			return;
+		}
+
 		// Get user memberships
 		$userMemberships = $this->getUserMemberships();
+		$userMemberships = apply_filters('rcp-file-protector/front/guard/user_memberships', $userMemberships);
 
 		// Get protection levels
 		$protectionLevels = stripslashes_deep(
 			get_option('rcp_file_protector_protection_levels', [])
 		);
 
-		$isAllowed = $this->checkAccess($protectionLevels, $userMemberships, $file);
+		$protectionLevels = apply_filters('rcp-file-protector/front/guard/protection_levels', $protectionLevels);
 
+		$isAllowed = $this->checkAccess($protectionLevels, $userMemberships, $file);
+		$isAllowed = apply_filters('rcp-file-protector/front/guard/is_allowed_access', $isAllowed);
+		
 		if (! $isAllowed && ! is_super_admin()) {
-			$this->abort();
+			do_action('rcp-file-protector/front/guard/before_abort');
+
+			$this->abort();	
 		}
 
+		do_action('rcp-file-protector/front/guard/before_request_processed');
+		
 		$this->processRequest($file);
 	}
 
+	/**
+	 * Verify if request is valid
+	 *
+	 * @param string $file
+	 * @return void
+	 */
 	protected function verifyRequest($file)
 	{
 		if (! $file) {
@@ -45,6 +112,11 @@ class Guard
 		}
 	}
 
+	/**
+	 * Get filename from request
+	 *
+	 * @return string|null
+	 */
 	protected function getFileFromRequest() 
 	{
 		return isset($_GET['file']) ? 
@@ -54,12 +126,18 @@ class Guard
 		;
 	}
 
-	protected function match_url($pattern, $url, $isRegex = false) 
+	/**
+	 * Match url
+	 *
+	 * @param string $pattern
+	 * @param string $url
+	 * @param boolean $isRegex
+	 * @return boolean
+	 */
+	protected function matchUrl($pattern, $url, $isRegex = false) 
 	{
 
 		if ($isRegex) {
-			// var_dump("/$pattern/", $url, preg_match("/$pattern/", $url));
-			// wp_die(1);
 			return preg_match("/$pattern/", $url);
 		}
 	
@@ -70,6 +148,11 @@ class Guard
 		return strpos($url, $pattern) !== false;
 	}
 
+	/**
+	 * Get user memberships
+	 *
+	 * @return array
+	 */
 	protected function getUserMemberships()
 	{
 		$userMemberships = [];
@@ -98,14 +181,22 @@ class Guard
 		return $userMemberships;
 	}
 
-	public function checkAccess($protectionLevels, $userMemberships, $file)
+	/**
+	 * Check user access to file
+	 *
+	 * @param array $protectionLevels
+	 * @param array $userMemberships
+	 * @param string $file
+	 * @return void
+	 */
+	public function checkAccess(array $protectionLevels, array $userMemberships, $file)
 	{
 		$isAllowed = true;
 
 		foreach ($protectionLevels as $level) {
 			$pattern = $level['url'];
 
-			if ($this->match_url($pattern, $file, $level['isRegex'])) {
+			if ($this->matchUrl($pattern, $file, $level['isRegex'])) {
 				
 				$isAllowed = is_user_logged_in() && count(
 					array_intersect($level['memberships'], $userMemberships)
@@ -116,62 +207,53 @@ class Guard
 		return $isAllowed;
 	}
 
+	/**
+	 * Abort request
+	 *
+	 * @param integer $code
+	 * @param string $message
+	 * @return void
+	 */
 	protected function abort($code = 404, $message = '404. File not found.') 
 	{
 		status_header($code);
 		wp_die($message);
 	}
 
+	/**
+	 * Try to read and return file
+	 *
+	 * @param string $file
+	 * @return void
+	 */
 	protected function processRequest($file)
+	{	
+		try {
+			
+			$this->fileReader->read($file);
+
+		} catch (FileNotFoundException $e) {
+			$this->abort(
+				$e->getCode(),
+				$e->getMessage()
+			);
+		}
+	}
+
+	/**
+	 * Unguard the guard
+	 *
+	 * @param boolean $unguard
+	 * @return void|boolean
+	 */
+	public function unguard($unguard = null)
 	{
-		list($basedir) = array_values(
-			array_intersect_key(
-				wp_upload_dir(), array('basedir' => 1)
-			)
-		) + array(NULL);
-		
-		$file =  rtrim($basedir,'/').'/'.str_replace('..', '', !is_null($file) ? $file : '');
-		$file = realpath($file);
-		
-		if (!$basedir || !is_file($file)) {
-			$this->abort();
+		if ($unguard === null) {
+			return $this->unguard;
 		}
 
-		$mime = wp_check_filetype($file);
-		if( false === $mime[ 'type' ] && function_exists( 'mime_content_type' ) )
-			$mime[ 'type' ] = mime_content_type( $file );
-		if( $mime[ 'type' ] )
-			$mimetype = $mime[ 'type' ];
-		else
-			$mimetype = 'image/' . substr( $file, strrpos( $file, '.' ) + 1 );
-		header( 'Content-Type: ' . $mimetype ); // always send this
-		if ( false === strpos( $_SERVER['SERVER_SOFTWARE'], 'Microsoft-IIS' ) )
-			header( 'Content-Length: ' . filesize( $file ) );
-		$last_modified = gmdate( 'D, d M Y H:i:s', filemtime( $file ) );
-		$etag = '"' . md5( $last_modified ) . '"';
-		header( "Last-Modified: $last_modified GMT" );
-		header( 'ETag: ' . $etag );
-		header( 'Expires: ' . gmdate( 'D, d M Y H:i:s', time() + 100000000 ) . ' GMT' );
-		// Support for Conditional GET
-		$client_etag = isset( $_SERVER['HTTP_IF_NONE_MATCH'] ) ? stripslashes( $_SERVER['HTTP_IF_NONE_MATCH'] ) : false;
-		if( ! isset( $_SERVER['HTTP_IF_MODIFIED_SINCE'] ) )
-			$_SERVER['HTTP_IF_MODIFIED_SINCE'] = false;
-		$client_last_modified = trim( $_SERVER['HTTP_IF_MODIFIED_SINCE'] );
-		// If string is empty, return 0. If not, attempt to parse into a timestamp
-		$client_modified_timestamp = $client_last_modified ? strtotime( $client_last_modified ) : 0;
-		// Make a timestamp for our most recent modification...
-		$modified_timestamp = strtotime($last_modified);
-		if ( ( $client_last_modified && $client_etag )
-			? ( ( $client_modified_timestamp >= $modified_timestamp) && ( $client_etag == $etag ) )
-			: ( ( $client_modified_timestamp >= $modified_timestamp) || ( $client_etag == $etag ) )
-			) {
-			status_header( 304 );
-			exit;
-		}
-
-		// If we made it this far, just serve the file
-		readfile( $file );
-
+		// Convert to boolean and assign
+		$this->unguard = !! $unguard;
 	}
 
 }

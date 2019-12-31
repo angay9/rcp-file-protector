@@ -2,8 +2,18 @@
 
 namespace RcpFileProtector\Core\Admin\Helpers;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 class Htaccess
 {
+    /**
+     * Add htaccess rules
+     *
+     * @param string $pluginPath
+     * @return void
+     */
     public function addRules($pluginPath)
     {
         $htaccessFile = $this->getHtaccessFilePath();
@@ -15,6 +25,11 @@ class Htaccess
         }
     }
 
+    /**
+     * Remove rules from htaccess
+     *
+     * @return void
+     */
     public function removeRules()
     {
         $htaccessFile = $this->getHtaccessFilePath();
@@ -28,14 +43,25 @@ class Htaccess
         }
     }
 
+    /**
+     * Get htaccess file path
+     *
+     * @return string
+     */
     public function getHtaccessFilePath()
     {
-        $home_path = get_home_path();
-        $htaccess_file = $home_path . '.htaccess';
+        $homePath = get_home_path();
+        $htaccessFile = $homePath . '.htaccess';
 
-        return $htaccess_file;
+        return $htaccessFile;
     }
 
+    /**
+     * Check if htaccess file is writable
+     *
+     * @param string $htaccessFile
+     * @return boolean
+     */
     public function isHtaccessWritable($htaccessFile) 
     {
         if (!file_exists($htaccessFile)) {
@@ -58,19 +84,31 @@ class Htaccess
     	return true;
     }
 
+    /**
+     * Get htacces rules
+     *
+     * @param string $pluginPath
+     * @return string
+     */
     public function getRules($pluginPath)
     {
         $rules = " # RCP File Protector Rules
 <IfModule mod_rewrite.c>
     RewriteCond %{REQUEST_FILENAME} -s
     # RewriteRule ^wp-content/uploads/(.*)$ dl-file.php?file=/$1 [QSA,L]
-    RewriteRule ^wp-content/uploads/(.*)$ {$pluginPath}/dl-file.php?file=/$1 [QSA,L]
+    RewriteRule ^wp-content/uploads/(.*)$ {$pluginPath}/file-guard.php?file=/$1 [QSA,L]
 </IfModule>
  # End RCP File Protector Rules";
         
         return $rules;
     }
 
+    /**
+     * Check if rules already exist
+     *
+     * @param string $htaccessFile
+     * @return boolean
+     */
     public function rulesAreadyExist($htaccessFile)
     {
         return strpos(file_get_contents($htaccessFile), "# RCP File Protector Rules") !== false;

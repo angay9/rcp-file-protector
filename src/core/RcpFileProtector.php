@@ -11,38 +11,106 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class RcpFileProtector 
 {
-    protected $view;
-
+    /**
+     * Admin settings
+     *
+     * @var RcpFileProtector\Core\Admin\Settings
+     */
     protected $adminSettings;
 
-    public function __construct()
-    {
-        $this->view = new View(
-            __DIR__ . '/../../views'
-        );
+    /**
+     * Htaccess helper
+     *
+     * @var RcpFileProtector\Core\Admin\Helpers\Htaccess
+     */
+    protected $htaccess;
 
-        $this->adminSettings = new Settings(
-            $this->view
-        );
+    /**
+     * Constructor
+     *
+     * @param RcpFileProtector\Core\Admin\Settings $settings
+     * @param RcpFileProtector\Core\Admin\Helpers\Htaccess $htaccess
+     */
+    public function __construct(Settings $settings, Htaccess $htaccess)
+    {
+        $this->adminSettings = $settings;
+        $this->htaccess = $htaccess;
     }
 
+    /**
+     * Initialize plugin
+     *
+     * @return void
+     */
     public function init()
     {
+        if (!is_plugin_active('restrict-content-pro/restrict-content-pro.php')) {
+            return;
+        }
+        
         $this->adminSettings->init();
     }
 
+    /**
+     * On plugin activated
+     *
+     * @return void
+     */
     public function onPluginActivated()
     {
-        $htaccessHelper = new Htaccess();
-
-        $htaccessHelper->addRules(RCP_FILE_PROTECTOR_RELATIVE_ROOT_URL);
+        $this->htaccess->addRules(RCP_FILE_PROTECTOR_RELATIVE_ROOT_URL);
     }
 
+    /**
+     * On plugin deactivated
+     *
+     * @return void
+     */
     public function onPluginDeactivated()
     {
-        $htaccessHelper = new Htaccess();
+        $this->htaccess->removeRules();
+    }
 
-        $htaccessHelper->removeRules();
+    /**
+     * Set admin settings
+     *
+     * @param RcpFileProtector\Core\Admin\Settings $settings
+     * @return void
+     */
+    public function setAdminSettings(Settings $settings)
+    {
+        $this->adminSettings = $settings;
+    }
+
+    /**
+     * Get admin settings
+     *
+     * @return RcpFileProtector\Core\Admin\Settings
+     */
+    public function getAdminSettings()
+    {
+        return $this->adminSettings;
+    }
+
+    /**
+     * Set htaccess helper
+     *
+     * @param RcpFileProtector\Core\Admin\Helpers\Htaccess $htaccess
+     * @return void
+     */
+    public function setHtaccess(Htaccess $htaccess)
+    {
+        $this->htaccess = $htaccess;
+    }
+
+    /**
+     * Get htaccess helpr
+     *
+     * @return RcpFileProtector\Core\Admin\Helpers\Htaccess
+     */
+    public function getHtaccess()
+    {
+        return $this->htaccess;
     }
 
 }

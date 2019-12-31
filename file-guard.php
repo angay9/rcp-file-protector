@@ -25,7 +25,14 @@ wp_cookie_constants();
 ob_end_clean();
 ob_end_flush();
 
-require_once(__DIR__ . '/src/core/front/Guard.php');
+require_once __DIR__ . '/bootstrap.php';
 
-$guard = new Guard();
+$guard = $rcpFileProtectorContainer->get(Guard::class);
+
+// If rcp is not being used - don't check for permissions
+if (! is_plugin_active('restrict-content-pro/restrict-content-pro.php')) {
+    $guard->unguard(true);
+}
+
 $guard->protect();
+
