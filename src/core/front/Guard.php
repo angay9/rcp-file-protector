@@ -28,6 +28,11 @@ class Guard
 	 */
 	protected $fileReader;
 
+	/**
+	 * Constructor
+	 *
+	 * @param RcpFileProtector\Core\Front\FileReader $fileReader
+	 */
 	public function __construct(FileReader $fileReader)
 	{
 		$this->fileReader = $fileReader;

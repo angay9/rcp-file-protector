@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: File Protector For Restrict Content Pro
- * Plugin URI: https://andriy.space
+ * Plugin URI: https://github.com/angay9/rcp-file-protector
  * Description: Protect your files from unauthorized access
  * Version: 0.0.1
  * Author: Andriy Haydash
