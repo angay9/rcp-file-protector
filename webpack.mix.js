@@ -13,5 +13,5 @@ mix.webpackConfig(webpack => {
 });
 
 mix
-    .sass('assets/src/scss/rcp-file-protector.scss', 'assets/dist/css')
-   .js('assets/src/js/app.js', 'assets/dist/js');
+    .sass('resources/src/scss/rcp-file-protector.scss', 'resources/dist/css')
+   .js('resources/src/js/app.js', 'resources/dist/js');

@@ -48,20 +48,20 @@ class Settings
             'dashicons-hidden'
         );
 
-        add_action('admin_print_scripts-' . $page, [$this, 'addAdminAssets']);
+        add_action('admin_print_scripts-' . $page, [$this, 'addAdminResources']);
     }
 
     /**
-     * Add admin assets
+     * Add admin resources
      *
      * @return void
      */
-    public function addAdminAssets()
+    public function addAdminResources()
     {
 
         wp_register_script(
             'rcp-file-protector', 
-            RCP_FILE_PROTECTOR_ROOT_URL . '/assets/dist/js/app.js', 
+            RCP_FILE_PROTECTOR_ROOT_URL . '/resources/dist/js/app.js', 
             ['jquery'], 
             '', 
             true
@@ -70,7 +70,7 @@ class Settings
         wp_enqueue_script('rcp-file-protector');
         wp_enqueue_style(
             'rcp-file-protector', 
-            RCP_FILE_PROTECTOR_ROOT_URL . '/assets/dist/css/rcp-file-protector.css' 
+            RCP_FILE_PROTECTOR_ROOT_URL . '/resources/dist/css/rcp-file-protector.css' 
         );
     }
 
