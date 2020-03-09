@@ -70,7 +70,7 @@ class Guard
 		$file = $this->getFileFromRequest();
 
 		// Check if file arg exists
-		$this->verifyRequest($file);
+        $this->verifyRequest($file);
 
 		if ($this->unguard === true) {
 			

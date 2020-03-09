@@ -25,6 +25,7 @@ wp_cookie_constants();
 ob_end_clean();
 ob_end_flush();
 
+
 require_once __DIR__ . '/bootstrap.php';
 
 $guard = $rcpFileProtectorContainer->get(Guard::class);
