@@ -13,7 +13,7 @@ require __DIR__ . '/config/constants.php';
 $viewConfig = require_once __DIR__ . '/config/view.php';
 
 // Autoload
-require_once __DIR__ . '/src/core/autoload/Psr4Autoloader.php';
+require_once __DIR__ . '/src/Core/Autoload/Psr4Autoloader.php';
 $config = require_once __DIR__ . '/config/autoload.php'; 
 
 $loader = new Psr4Autoloader();
